@@ -25,7 +25,16 @@
 $ErrorActionPreference = "SilentlyContinue"
 $WSLEnabled = (Get-WindowsOptionalFeature -Online -FeatureName *Linux* | where {$_.State -eq "Enabled"}) -ne $Null
 $distroPath = "C:\distro"
-$distroURI = "https://aka.ms/wsl-ubuntu-1804"
+$distros =  @(
+			@{name='ubuntu-1804';uri='https://aka.ms/wsl-ubuntu-1804'}
+			@{name='ubuntu-1804';uri='https://aka.ms/wsl-ubuntu-1604'}
+			@{name='debian';uri='https://aka.ms/wsl-debian-gnulinux'}
+			@{name='kali';uri='https://aka.ms/wsl-kali-linux'}
+			@{name='opensuse';uri='https://aka.ms/wsl-opensuse-42'}
+			@{name='sles';uri='https://aka.ms/wsl-sles-12'}
+
+			)
+
 $distroName = $distroURI.split("-")[1]
 if (!(Test-Path $distroPath))
 {
@@ -57,7 +66,7 @@ Function Invoke-EnableWSL{
     }
     
     Catch{
-      Write-Error "Encountered an error."
+      Write-Error "Encountered an error enabling WSL."
       Break
     }
   }
@@ -69,9 +78,20 @@ Function Invoke-EnableWSL{
   }
 }
 Function Invoke-InstallDistro{
-  Param()
+  Param
+  (
+  [String]$DistroName
+  )
   
   Begin{
+	foreach ($distro in $distros)
+	{
+		if($distro.name -eq $distroName)
+		{
+			$distroURI = $distro.uri
+			break
+		}
+	}
   }
   
   Process{
@@ -86,19 +106,19 @@ Function Invoke-InstallDistro{
 		} 
 		else
 		{
-			Write-Verbose "WSL Already enabled, Skipping..."
 		}
     }
     
     Catch{
-      Write-Error "Encountered an error."
+      Write-Error "Encountered an error installing $distroName."
       Break
     }
   }
   
   End{
     If($?){
-      
+      Write-Output "Launching $distroName"
+	  Start-Process "$distroName.exe"
     }
   }
 }
@@ -108,4 +128,4 @@ Function Invoke-InstallDistro{
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
 #Script Execution goes here
 Invoke-EnableWSL
-Invoke-InstallDistro
+Invoke-InstallDistro -Distro ubuntu-1804
